@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+  <title>Websokcets</title>
+  <style>
+#outpoot {
+  width: 100%;
+  height: 400px;
+  display:block;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  flex-direction: column-reverse;
+}
+#inpoot {
+  width: 90%;
+  background-color: #DCDCDC;
+}
+#sendButton{
+  display:inline-block;
+}
+body {
+  background-color: #99aab5;
+}
+  </style>
+</head>
+
+<body>
+  <div id="outpoot">
+  </div>
+  <input id="inpoot" autocomplete="off">
+  <button onclick="sendit()" id="sendButton">Send it!</button>
+  <div id="userlist">
+  </div>
+</body>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script type="text/javascript">
+//set username to the variable userName
+  var userName = "Tiler"
+//set color to the variable nameColor (Uses Hexadecimal)
+  var nameColor = "#fcba03"
+//set outpoot, inpoot, userList, and Button to the object called boxes, these come from the document
+  var boxes = {
+    outpoot: document.getElementById('outpoot'),
+    inpoot: document.getElementById('inpoot'),
+    userlist: document.getElementById('userlist'),
+    sendButton: document.getElementById('sendButton')
+  }
+//set a ws as a Constant, creates new websocket to the ip 192.168.64.235:8080
+  const ws = new WebSocket(`ws://192.168.64.235:8080/`);
+//When webpage opens run this function
+  ws.onopen = function() {
+    //log that the user connected to the server
+    console.log('Connected');
+    //send the server the type of websocket we are sending and the username of the client
+    ws.send(
+      JSON.stringify({
+        type: 'connect',
+        name: userName
+      }));
+  }
+//When client sends a message run this function
+  ws.onmessage = function(message) {
+    //parse the JSON message and assign it to the varable data
+    let data = JSON.parse(message.data);
+    //If the data type is a userlist do this
+    if (data.type == 'userlist') {
+      //set the userlist box to empty
+        boxes.userlist.innerHTML = "";
+      //for each data that is a name do this function
+        data.names.forEach( function( name ) {
+          //add the parsed name from userlist to the Userlist on the webpage
+          boxes.userlist.innerHTML += name + '<br>';
+        });
+    //if the data type is of a message origin do this
+    } else if (data.type == 'message') {
+
+      //set the Outpoot div to the span which includes the message, color, and date.
+      boxes.outpoot.innerHTML +=
+        `<span style='color: ${data.color};' title='${data.date}'>` +
+        `${data.name}: </span>` +
+        data.message +
+        `<br>`;
+        //Auto scroll to the bottom of scroll bar
+        boxes.outpoot.scrollTop = boxes.outpoot.scrollHeight;
+    }
+  }
+  //function for button that send the message typed in the input to the server
+  function sendit() {
+
+    //set the type of message, the contents of message, color, username, and date to object data
+    let data = {
+      type: "message",
+      message:boxes.inpoot.value,
+      color: nameColor,
+      name: userName,
+      date: new Date().toString()
+    }
+    //parse data to a JSON and send to the server
+    ws.send(JSON.stringify(data));
+      boxes.inpoot.value = ''
+  }
+</script>
+
+
+</html>
